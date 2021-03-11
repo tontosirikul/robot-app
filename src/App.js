@@ -1,23 +1,38 @@
-import logo from './logo.svg';
-import './App.css';
+import "./App.scss";
+import MapSection from "./Components/MapSection";
+import { Button, Grid } from "@material-ui/core";
+import React from "react";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <Grid container direction="column" justify="center" alignItems="center">
+        <Grid container direction="row" justify="center" alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ margin: "1rem" }}
+          >
+            Initial Pose
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ margin: "1rem" }}
+          >
+            Send Goal
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ margin: "1rem" }}
+          >
+            Add Virtual wall
+          </Button>
+        </Grid>
+
+        <MapSection />
+      </Grid>
     </div>
   );
 }
