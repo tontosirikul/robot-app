@@ -1,7 +1,7 @@
 import { Stage, Layer, Line } from "react-konva";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../style/MapSection.scss";
-import { Container } from "@material-ui/core";
+import { Container, Grid, Button } from "@material-ui/core";
 import MyImage from "./MyImage";
 import io from "socket.io-client";
 
@@ -10,27 +10,31 @@ import io from "socket.io-client";
 
 function MapSection() {
   const [Src, setSrc] = useState(null);
-  const [tool, setTool] = useState("pen");
+  const [isDraw, setIsDraw] = useState(false);
+  const [points, setPoints] = useState([]);
   const [lines, setLines] = useState([]);
-  const isDrawing = useRef(false);
-  const [windowWidth, setWindowWidth] = useState(
-    Math.ceil(window.innerWidth * 0.4)
-  );
-  const [windowHeight, setWindowHeight] = useState(
-    Math.ceil(window.innerHeight * 0.3)
-  );
-  // var ImageObj = new window.Image();
-  let resizeMap = () => {
-    let mapWidth = Math.ceil(window.innerWidth * 0.4);
-    let mapHeight = Math.ceil(window.innerWidth * 0.3);
-    setWindowWidth(mapWidth);
-    setWindowHeight(mapHeight);
-  };
-
-  useEffect(() => {
-    resizeMap();
-    window.addEventListener("resize", resizeMap);
-  }, []);
+  const [historyLines, setHistoryLines] = useState([]);
+  function saveWall() {
+    setIsDraw(false);
+    console.log("saved");
+    setHistoryLines((oldLines) => [...oldLines, lines]);
+    setPoints([]);
+    setLines([]);
+    // send api
+  }
+  function clearLines() {
+    setLines([]);
+    setPoints([]);
+  }
+  function handleMouseDown(e) {
+    if (points.length == 0) {
+      const pos = e.target.getStage().getPointerPosition();
+      setPoints([...points, pos.x, pos.y]);
+    } else {
+      const endpoint = e.target.getStage().getPointerPosition();
+      setPoints([...points, endpoint.x, endpoint.y]);
+    }
+  }
 
   useEffect(() => {
     // socket.on("FromAPI", (dataURI) => {
@@ -39,74 +43,91 @@ function MapSection() {
     setSrc("https://konvajs.org/assets/yoda.jpg");
   }, []);
 
-  const handleMouseDown = (e) => {
-    isDrawing.current = true;
-    const pos = e.target.getStage().getPointerPosition();
-    console.log(pos);
-    setLines([...lines, { tool, points: [pos.x, pos.y] }]);
-  };
-
-  const handleMouseMove = (e) => {
-    // no drawing - skipping
-    if (!isDrawing.current) {
-      return;
+  useEffect(() => {
+    var temp = [];
+    if (points.length >= 4) {
+      for (let i = 0; i < points.length; i++) {
+        if (temp.length <= 4) {
+          temp.push(points[i]);
+          if (temp.length === 4) {
+            setLines([...lines, temp]);
+            temp = temp.slice(2, 4);
+          }
+        }
+      }
     }
-    const stage = e.target.getStage();
-    const point = stage.getPointerPosition();
-    let lastLine = lines[lines.length - 1];
-    // add point
-    lastLine.points = lastLine.points.concat([point.x, point.y]);
+  }, [points]);
 
-    // replace last
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines(lines.concat());
-  };
-
-  const handleMouseUp = () => {
-    isDrawing.current = false;
-  };
+  useEffect(() => {
+    console.log("current", lines, "hist", historyLines);
+  }, [lines, historyLines]);
 
   return (
-    <div className="MapSection">
-      <Container className="Map" style={{ width: windowWidth }}>
+    <div className="MapSection" style={{ margin: "1rem" }}>
+      <Container className="Map" style={{ height: 500, width: 700 }}>
         <Stage
-          width={windowWidth}
-          height={windowHeight}
+          width={700}
+          height={500}
           style={{ border: "1px solid #000000" }}
-          onMouseDown={handleMouseDown}
-          onMousemove={handleMouseMove}
-          onMouseup={handleMouseUp}
+          onMouseDown={isDraw ? handleMouseDown : null}
         >
           <Layer>
-            <MyImage url={Src} x={windowWidth / 2} y={windowHeight / 2} />
+            <MyImage url={Src} x={700 / 2} y={500 / 2} />
           </Layer>
           <Layer>
-            {lines.map((line, i) => (
+            {lines.map((xline, i) => (
               <Line
                 key={i}
-                points={line.points}
-                stroke="#df4b26"
+                points={xline}
+                stroke="black"
+                strokeWidth={2}
+                tension={0.5}
+                lineCap="round"
+              />
+            ))}
+            {historyLines.map((hline, j) => (
+              <Line
+                key={j}
+                points={hline}
+                stroke="black"
                 strokeWidth={5}
                 tension={0.5}
                 lineCap="round"
-                globalCompositeOperation={
-                  line.tool === "eraser" ? "destination-out" : "source-over"
-                }
               />
             ))}
           </Layer>
         </Stage>
+        <Grid container direction="row" justify="center" alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ margin: "1rem" }}
+            onClick={
+              isDraw
+                ? () => {
+                    setIsDraw(false);
+                    saveWall();
+                  }
+                : () => {
+                    setIsDraw(true);
+                  }
+            }
+          >
+            {isDraw ? "Save virtual wall" : "Add Virtual wall"}
+          </Button>
+
+          <Button
+            variant="contained"
+            color="secondary"
+            style={{ margin: "1rem" }}
+            disabled={!isDraw}
+            onClick={() => clearLines()}
+          >
+            CANCEL
+          </Button>
+        </Grid>
+        {}
       </Container>
-      <select
-        value={tool}
-        onChange={(e) => {
-          setTool(e.target.value);
-        }}
-      >
-        <option value="pen">Pen</option>
-        <option value="eraser">Eraser</option>
-      </select>
-      <h1>{windowWidth + " x " + windowHeight}</h1>
     </div>
   );
 }
