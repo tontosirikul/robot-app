@@ -64,15 +64,15 @@ function MapSection() {
 
   return (
     <div className="MapSection" style={{ margin: "1rem" }}>
-      <Container className="Map" style={{ height: 500, width: 700 }}>
+      <Container className="Map" style={{ height: 375, width: 525 }}>
         <Stage
-          width={700}
-          height={500}
+          width={525}
+          height={375}
           style={{ border: "1px solid #000000" }}
           onMouseDown={isDraw ? handleMouseDown : null}
         >
           <Layer>
-            <MyImage url={Src} x={700 / 2} y={500 / 2} />
+            <MyImage url={Src} x={0} y={0} />
           </Layer>
           <Layer>
             {lines.map((xline, i) => (
@@ -97,37 +97,36 @@ function MapSection() {
             ))}
           </Layer>
         </Stage>
-        <Grid container direction="row" justify="center" alignItems="center">
-          <Button
-            variant="contained"
-            color="primary"
-            style={{ margin: "1rem" }}
-            onClick={
-              isDraw
-                ? () => {
-                    setIsDraw(false);
-                    saveWall();
-                  }
-                : () => {
-                    setIsDraw(true);
-                  }
-            }
-          >
-            {isDraw ? "Save virtual wall" : "Add Virtual wall"}
-          </Button>
-
-          <Button
-            variant="contained"
-            color="secondary"
-            style={{ margin: "1rem" }}
-            disabled={!isDraw}
-            onClick={() => clearLines()}
-          >
-            CANCEL
-          </Button>
-        </Grid>
-        {}
       </Container>
+      <Grid container direction="row" justify="center" alignItems="center">
+        <Button
+          variant="contained"
+          color="primary"
+          style={{ margin: "1rem" }}
+          onClick={
+            isDraw
+              ? () => {
+                  setIsDraw(false);
+                  saveWall();
+                }
+              : () => {
+                  setIsDraw(true);
+                }
+          }
+        >
+          {isDraw ? "Save virtual wall" : "Add Virtual wall"}
+        </Button>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          style={{ margin: "1rem" }}
+          disabled={!isDraw}
+          onClick={() => clearLines()}
+        >
+          CANCEL
+        </Button>
+      </Grid>
     </div>
   );
 }

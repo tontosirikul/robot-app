@@ -5,10 +5,16 @@ import React from "react";
 
 function App() {
   return (
-    <div>
-      <Grid container direction="column" justify="center" alignItems="center">
+    <div className="container">
+      <nav>Navbar</nav>
+      <main>
         <MapSection />
-      </Grid>
+      </main>
+      <div id="sidebar">Sidebar</div>
+      <div className="content1">Content1</div>
+      <div className="content2">Content2</div>
+      <div className="content3">Content2</div>
+      <footer>Footer</footer>
     </div>
   );
 }
