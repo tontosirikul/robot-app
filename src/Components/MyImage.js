@@ -16,8 +16,6 @@ const MyImage = ({ url, x, y }) => {
   const [image] = useImage(url);
   const width = (image && image.width) || 0;
   const height = (image && image.height) || 0;
-  console.log(width);
-  console.log(height);
   const [isDraw, setIsDraw] = useState(false);
   const [points, setPoints] = useState([]);
   const [lines, setLines] = useState([]);
@@ -25,7 +23,15 @@ const MyImage = ({ url, x, y }) => {
   function saveWall() {
     setIsDraw(false);
     console.log("saved");
-    //setHistoryLines((oldLines) => [...oldLines, lines]);
+    //console.log(lines);
+    const virtual_wall = [];
+    lines.map((line) =>
+      virtual_wall.push({
+        startpoint: { x: line[0], y: line[1] },
+        endpoint: { x: line[2], y: line[3] },
+      })
+    );
+    // for post the data of virtual wall object
     setPoints([]);
     setLines([]);
     // send api
@@ -65,9 +71,6 @@ const MyImage = ({ url, x, y }) => {
     }
   }, [points]);
 
-  useEffect(() => {
-    console.log("current", lines);
-  }, [lines]);
   return (
     <div className="MapSection" style={{ margin: "1rem" }}>
       <Container className="Map" style={{ height: height, width: width }}>
