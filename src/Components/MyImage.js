@@ -1,7 +1,7 @@
 import { Image } from "react-konva";
 import useImage from "use-image";
 import { Stage, Layer, Line } from "react-konva";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "../style/MapSection.scss";
 import { Container, Grid, Button } from "@material-ui/core";
 import io from "socket.io-client";
@@ -41,7 +41,7 @@ const MyImage = ({ url, x, y }) => {
     setPoints([]);
   }
   function handleMouseDown(e) {
-    if (points.length == 0) {
+    if (points.length === 0) {
       const pos = e.target.getStage().getPointerPosition();
       setPoints([...points, pos.x, pos.y]);
     } else {

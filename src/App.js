@@ -1,8 +1,7 @@
 import "./App.scss";
 import MapSection from "./Components/MapSection";
-import { Button, Grid } from "@material-ui/core";
+
 import React from "react";
-import MyImage from "./Components/MyImage";
 
 function App() {
   return (
