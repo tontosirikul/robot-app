@@ -5,30 +5,16 @@ import React, { useState, useEffect } from "react";
 import "../style/MapSection.scss";
 import { Container, Grid, Button } from "@material-ui/core";
 import io from "socket.io-client";
-
-// const MyImage = ({ url, x, y }) => {
-//   const [image] = useImage(url);
-
-//   return <Image image={image} x={x} y={y} />;
-// };
+import img from "../static/black.jpg";
 
 const MyImage = ({ socket, x, y }) => {
   const [src, setSrc] = useState(null);
-  const [image] = useImage(null);
+  var [image] = useImage();
 
-  useEffect(() => {
-    socket.on("Occupancy Grid", (msg) => {
-      console.log("received");
-      setSrc(msg);
-    });
-  }, []);
+  useEffect(() => {}, []);
 
-  useEffect(() => {
-    image.src = src;
-  }, [src]);
+  useEffect(() => {}, [src]);
 
-  const width = (image && image.width) || 0;
-  const height = (image && image.height) || 0;
   const [isDraw, setIsDraw] = useState(false);
   const [points, setPoints] = useState([]);
   const [lines, setLines] = useState([]);
@@ -86,38 +72,37 @@ const MyImage = ({ socket, x, y }) => {
 
   return (
     <div className="MapSection" style={{ margin: "1rem" }}>
-      <div>
-        <Container
-          className="Map"
-          style={{
-            height: height,
-            width: width,
-          }}
+      <Container
+        className="Map"
+        style={{
+          height: 381,
+          width: 381,
+        }}
+      >
+        <Stage
+          width={381}
+          height={381}
+          style={{ border: "1px solid #000000" }}
+          onMouseDown={isDraw ? handleMouseDown : null}
         >
-          <Stage
-            width={width}
-            height={height}
-            style={{ border: "1px solid #000000" }}
-            onMouseDown={isDraw ? handleMouseDown : null}
-          >
-            <Layer>
-              <Image image={image} x={x} y={y} />
-            </Layer>
-            <Layer>
-              {lines.map((xline, i) => (
-                <Line
-                  key={i}
-                  points={xline}
-                  stroke="black"
-                  strokeWidth={2}
-                  tension={0.5}
-                  lineCap="round"
-                />
-              ))}
-            </Layer>
-          </Stage>
-        </Container>
-      </div>
+          <Layer>
+            <Image image={image} x={x} y={y} />
+          </Layer>
+          <Layer>
+            {lines.map((xline, i) => (
+              <Line
+                key={i}
+                points={xline}
+                stroke="black"
+                strokeWidth={2}
+                tension={0.5}
+                lineCap="round"
+              />
+            ))}
+          </Layer>
+        </Stage>
+      </Container>
+
       <Grid container direction="row" justify="center" alignItems="center">
         <Button
           variant="contained"
