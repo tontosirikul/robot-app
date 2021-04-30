@@ -12,8 +12,21 @@ import io from "socket.io-client";
 //   return <Image image={image} x={x} y={y} />;
 // };
 
-const MyImage = ({ url, x, y }) => {
-  const [image] = useImage(url);
+const MyImage = ({ socket, x, y }) => {
+  const [src, setSrc] = useState(null);
+  const [image] = useImage(null);
+
+  useEffect(() => {
+    socket.on("Occupancy Grid", (msg) => {
+      console.log("received");
+      setSrc(msg);
+    });
+  }, []);
+
+  useEffect(() => {
+    image.src = src;
+  }, [src]);
+
   const width = (image && image.width) || 0;
   const height = (image && image.height) || 0;
   const [isDraw, setIsDraw] = useState(false);
@@ -73,30 +86,38 @@ const MyImage = ({ url, x, y }) => {
 
   return (
     <div className="MapSection" style={{ margin: "1rem" }}>
-      <Container className="Map" style={{ height: height, width: width }}>
-        <Stage
-          width={width}
-          height={height}
-          style={{ border: "1px solid #000000" }}
-          onMouseDown={isDraw ? handleMouseDown : null}
+      <div>
+        <Container
+          className="Map"
+          style={{
+            height: height,
+            width: width,
+          }}
         >
-          <Layer>
-            <Image image={image} x={x} y={y} />
-          </Layer>
-          <Layer>
-            {lines.map((xline, i) => (
-              <Line
-                key={i}
-                points={xline}
-                stroke="black"
-                strokeWidth={2}
-                tension={0.5}
-                lineCap="round"
-              />
-            ))}
-          </Layer>
-        </Stage>
-      </Container>
+          <Stage
+            width={width}
+            height={height}
+            style={{ border: "1px solid #000000" }}
+            onMouseDown={isDraw ? handleMouseDown : null}
+          >
+            <Layer>
+              <Image image={image} x={x} y={y} />
+            </Layer>
+            <Layer>
+              {lines.map((xline, i) => (
+                <Line
+                  key={i}
+                  points={xline}
+                  stroke="black"
+                  strokeWidth={2}
+                  tension={0.5}
+                  lineCap="round"
+                />
+              ))}
+            </Layer>
+          </Stage>
+        </Container>
+      </div>
       <Grid container direction="row" justify="center" alignItems="center">
         <Button
           variant="contained"
