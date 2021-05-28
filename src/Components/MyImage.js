@@ -500,7 +500,7 @@ const MyImage = ({ socket, x, y }) => {
 
         <Button
           variant="contained"
-          color="secondary"
+          color={isDeleteWall ? "secondary" : "primary"}
           style={{ margin: "1rem" }}
           disabled={isDraw || isInitial || isGoal}
           onClick={
@@ -515,12 +515,12 @@ const MyImage = ({ socket, x, y }) => {
                 }
           }
         >
-          Remove wall
+          {isDeleteWall ? "Confirm" : "Remove Wall"}
         </Button>
 
         <Button
           variant="contained"
-          color="secondary"
+          color=""
           style={{ margin: "1rem" }}
           disabled={!isDraw && !isDeleteWall}
           onClick={
