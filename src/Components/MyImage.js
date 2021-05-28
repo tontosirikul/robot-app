@@ -1,6 +1,6 @@
 import { Image } from "react-konva";
 import useImage from "use-image";
-import { Stage, Layer, Line } from "react-konva";
+import { Stage, Layer, Line, Arrow, Shape } from "react-konva";
 import React, { useState, useEffect } from "react";
 import "../style/MapSection.scss";
 import { Container, Grid, Button } from "@material-ui/core";
@@ -51,6 +51,79 @@ class URLImage extends React.Component {
   }
 }
 
+class Drawable {
+  constructor(startx, starty) {
+    this.startx = startx;
+    this.starty = starty;
+  }
+}
+
+class ArrowDrawable extends Drawable {
+  constructor(startx, starty) {
+    super(startx, starty);
+    this.x = startx;
+    this.y = starty;
+  }
+  registerMovement(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  render() {
+    const points = [this.startx, this.starty, this.x, this.y];
+    return <Arrow points={points} fill="white" stroke="white" />;
+  }
+}
+
+var localhost = "192.168.1.16";
+async function saveWallAPI(input) {
+  const response = await fetch(`http://${localhost}:8000/api/createWall`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+async function deleteWallAPI(input) {
+  const response = await fetch(`http://${localhost}:8000/api/deleteWall`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+async function initialPoseAPI(input) {
+  const response = await fetch(`http://${localhost}:8000/api/setPose`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+async function moveBaseAPI(input) {
+  const response = await fetch(`http://${localhost}:8000/api/setGoal`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+async function moveBaseStopAPI(input) {
+  const response = await fetch(`http://${localhost}:8000/api/stopGoal`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
 const MyImage = ({ socket, x, y }) => {
   const [src, setSrc] = useState(null);
 
@@ -70,6 +143,41 @@ const MyImage = ({ socket, x, y }) => {
   const [currentWall, setCurrentWall] = useState([]);
   const [selectedWall, setSelectedWall] = useState([]);
 
+  const [isInitial, setIsInitial] = useState(false);
+  const [arrow, setArrow] = useState([]);
+
+  const [isGoal, setIsGoal] = useState(false);
+
+  const [isRobot, setIsRobot] = useState({
+    status: true,
+    x: 20,
+    y: 100,
+    orientation: 90,
+  });
+
+  function getNewArrow(x, y) {
+    return new ArrowDrawable(x, y);
+  }
+
+  async function fetchWallAPI() {
+    const response = await fetch(`http://${localhost}:8000/api/getWall`);
+    const res = await response.json();
+    setCurrentWall(res);
+  }
+
+  async function fetchRobotPose() {
+    const response = await fetch(`http://${localhost}:8000/api/getRobotPose`);
+    const res = await response.json();
+    // use convertion function here (function quadTothera(orientation))
+    // convert orientation before setState
+    setIsRobot({
+      status: true,
+      x: res.x,
+      y: -res.y,
+      orientation: quadTotheta(res.orientation),
+    });
+  }
+
   function saveWall() {
     setMode("Normal mode");
     setIsDraw(false);
@@ -78,36 +186,28 @@ const MyImage = ({ socket, x, y }) => {
     const virtual_wall = [];
     lines.map((line) =>
       virtual_wall.push({
-        startpoint: { x: line[0], y: line[1] },
-        endpoint: { x: line[2], y: line[3] },
+        start_point: { x: line[1], y: line[0] },
+        end_point: { x: line[3], y: line[2] },
       })
     );
     // for post the data of virtual wall object
     setPoints([]);
     setLines([]);
     // send api
+    saveWallAPI(virtual_wall);
   }
 
   function deleteWall() {
     setMode("Delete mode");
     fetchCurrentWall();
   }
+
   function fetchCurrentWall() {
-    setCurrentWall([
-      {
-        id: 0,
-        startpoint: { x: 0, y: 0 },
-        endpoint: { x: 100, y: 200 },
-      },
-      {
-        id: 1,
-        startpoint: { x: 0, y: 0 },
-        endpoint: { x: 100, y: 150 },
-      },
-    ]);
-    console.log(currentWall);
+    fetchWallAPI();
   }
-  function sendSelecetedWall() {}
+  function sendSelectedWall(selected_wall) {
+    deleteWallAPI(selected_wall);
+  }
 
   function clearSelectedWall() {
     setIsDeleteWall(false);
@@ -116,6 +216,7 @@ const MyImage = ({ socket, x, y }) => {
   }
   function clearLines() {
     setMode("Normal mode");
+    setIsDraw(false);
     setLines([]);
     setPoints([]);
   }
@@ -127,6 +228,79 @@ const MyImage = ({ socket, x, y }) => {
       const endpoint = e.target.getStage().getPointerPosition();
       setPoints([...points, endpoint.x, endpoint.y]);
     }
+  }
+
+  function handleArrowDown(e) {
+    const newArrow = arrow;
+    if (newArrow.length === 0) {
+      const { x, y } = e.target.getStage().getPointerPosition();
+      const newDrawable = getNewArrow(x, y);
+      setArrow([newDrawable]);
+    }
+  }
+  // for calculating orientation
+  function handleArrowUp(e) {
+    const newDraw = arrow;
+    if (newDraw.length === 1) {
+      const { x, y } = e.target.getStage().getPointerPosition();
+      const drawableToAdd = newDraw[0];
+      drawableToAdd.registerMovement(x, y);
+
+      const deltaX = drawableToAdd.startx - drawableToAdd.x;
+      const deltaY = drawableToAdd.starty - drawableToAdd.y;
+      const thetaRadians = Math.atan2(deltaX, deltaY) + Math.PI / 2;
+
+      if (isInitial) {
+        const initial_pose = {
+          position: { x: drawableToAdd.starty, y: drawableToAdd.startx },
+          orientation: { theta: thetaRadians },
+        };
+        console.log(initial_pose);
+        initialPoseAPI(initial_pose);
+      } else if (isGoal) {
+        const goal = {
+          position: { x: drawableToAdd.starty, y: drawableToAdd.startx },
+          orientation: { theta: thetaRadians },
+        };
+        console.log(goal);
+        moveBaseAPI(goal);
+      }
+
+      setArrow([]);
+    }
+  }
+
+  function handleArrowMove(e) {
+    const newDraw = arrow;
+    if (newDraw.length === 1) {
+      const { x, y } = e.target.getStage().getPointerPosition();
+      const updatedNewDrawable = newDraw[0];
+      updatedNewDrawable.registerMovement(x, y);
+      setArrow([updatedNewDrawable]);
+    }
+  }
+
+  // copy from Nav2D
+  function quadTotheta(orientation) {
+    // convert to radians
+    var q0 = orientation.w;
+    var q1 = orientation.x;
+    var q2 = orientation.y;
+    var q3 = orientation.z;
+    var theta = Math.atan2(
+      2 * (q0 * q3 + q1 * q2),
+      1 - 2 * (Math.pow(q2, 2) + Math.pow(q3, 2))
+    );
+
+    // convert to degrees
+    var deg = theta * (180.0 / Math.PI);
+    if (deg >= 0 && deg <= 180) {
+      deg += 270;
+    } else {
+      deg -= 90;
+    }
+
+    return -deg;
   }
 
   useEffect(() => {
@@ -144,6 +318,7 @@ const MyImage = ({ socket, x, y }) => {
     }
   }, [points]);
 
+  useEffect(() => {});
   return (
     <div className="MapSection" style={{ margin: "1rem" }}>
       <Grid container direction="row" justify="center" alignItems="center">
@@ -162,7 +337,15 @@ const MyImage = ({ socket, x, y }) => {
           width={381}
           height={381}
           style={{ border: "1px solid #000000" }}
-          onMouseDown={isDraw ? handleMouseDown : null}
+          onMouseDown={
+            isDraw
+              ? handleMouseDown
+              : isInitial || isGoal
+              ? handleArrowDown
+              : null
+          }
+          onMouseUp={handleArrowUp}
+          onMouseMove={handleArrowMove}
         >
           <Layer>
             <URLImage src={src} x={x} y={y} />
@@ -179,16 +362,40 @@ const MyImage = ({ socket, x, y }) => {
               />
             ))}
           </Layer>
+
+          {isRobot.status ? (
+            <Layer>
+              <Shape
+                sceneFunc={(context, shape) => {
+                  var size = 15;
+                  context.beginPath();
+                  context.moveTo(-size / 2.0, -size / 2.0);
+                  context.lineTo(size, 0);
+                  context.lineTo(-size / 2.0, size / 2.0);
+                  context.closePath();
+                  context.fillStrokeShape(shape);
+                }}
+                fill="#00D2FF"
+                stroke="black"
+                strokeWidth={4}
+                // update position here
+                x={isRobot.x}
+                y={isRobot.y}
+                rotation={isRobot.orientation + 90}
+              />
+            </Layer>
+          ) : null}
+
           {isDeleteWall ? (
             <Layer>
               {currentWall.map((line, i) => (
                 <Line
-                  key={line.id}
+                  key={line.wall_id}
                   points={[
-                    line.startpoint.x,
-                    line.startpoint.y,
-                    line.endpoint.x,
-                    line.endpoint.y,
+                    line.start_point.y,
+                    line.start_point.x,
+                    line.end_point.y,
+                    line.end_point.x,
                   ]}
                   stroke={"white"}
                   strokeWidth={2}
@@ -205,18 +412,72 @@ const MyImage = ({ socket, x, y }) => {
                   }}
                   onMouseDown={() => {
                     var newWallSelected = [...selectedWall];
-                    if (selectedWall.indexOf(line.id) === -1)
-                      newWallSelected.push(line.id);
+                    if (selectedWall.indexOf(line.wall_id) === -1)
+                      newWallSelected.push(line.wall_id);
                     setSelectedWall(newWallSelected);
                   }}
                 />
               ))}
             </Layer>
           ) : null}
+          {/* layer for initial pose */}
+          <Layer>
+            {arrow.length === 1 ? arrow.map((i) => i.render()) : null}
+          </Layer>
+          {/* {newdrawables.map((drawable) => {
+            return drawable.render();
+          })} */}
         </Stage>
       </Container>
 
       <Grid container direction="row" justify="center" alignItems="center">
+        <Button
+          variant="contained"
+          color={!isInitial ? "primary" : "secondary"}
+          onClick={
+            !isInitial
+              ? () => {
+                  setMode("Initial mode");
+                  setIsInitial(true);
+                }
+              : () => {
+                  setMode("Normal mode");
+                  setIsInitial(false);
+                }
+          }
+          style={{ margin: "1rem" }}
+          disabled={isDraw || isDeleteWall || isGoal}
+        >
+          {!isInitial ? "Initial pose" : "Stop Initial"}
+        </Button>
+        <Button
+          variant="contained"
+          color={!isGoal ? "primary" : ""}
+          onClick={
+            !isGoal
+              ? () => {
+                  setMode("Send Goal mode");
+                  setIsGoal(true);
+                }
+              : () => {
+                  setMode("Normal mode");
+                  setIsGoal(false);
+                }
+          }
+          style={{ margin: "1rem" }}
+          disabled={isDraw || isDeleteWall || isInitial}
+        >
+          {!isGoal ? "Send Goal" : "Exit Goal"}
+        </Button>
+        <Button
+          variant="contained"
+          color={!isGoal ? "primary" : "secondary"}
+          onClick={moveBaseStopAPI("STOP")}
+          style={{ margin: "1rem" }}
+          disabled={!isGoal}
+        >
+          Emergency STOp
+        </Button>
         <Button
           variant="contained"
           color="primary"
@@ -232,6 +493,7 @@ const MyImage = ({ socket, x, y }) => {
                   setIsDraw(true);
                 }
           }
+          disabled={isDeleteWall || isInitial || isGoal}
         >
           {isDraw ? "Save virtual wall" : "Add Virtual wall"}
         </Button>
@@ -240,7 +502,7 @@ const MyImage = ({ socket, x, y }) => {
           variant="contained"
           color="secondary"
           style={{ margin: "1rem" }}
-          disbled={isDraw}
+          disabled={isDraw || isInitial || isGoal}
           onClick={
             !isDeleteWall
               ? () => {
@@ -248,7 +510,8 @@ const MyImage = ({ socket, x, y }) => {
                   deleteWall();
                 }
               : () => {
-                  sendSelecetedWall();
+                  sendSelectedWall(selectedWall);
+                  clearSelectedWall();
                 }
           }
         >
