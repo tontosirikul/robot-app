@@ -164,7 +164,7 @@ const MyImage = ({ socket, x, y }) => {
     const res = await response.json();
     setCurrentWall(res);
   }
-
+  // calculation robot pose here
   async function fetchRobotPose() {
     const response = await fetch(`http://${localhost}:8000/api/getRobotPose`);
     const res = await response.json();
