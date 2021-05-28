@@ -198,7 +198,7 @@ const MyImage = ({ socket, x, y }) => {
   }
 
   function deleteWall() {
-    setMode("Delete mode");
+    setMode("Delete Wall mode");
     fetchCurrentWall();
   }
 
@@ -469,15 +469,7 @@ const MyImage = ({ socket, x, y }) => {
         >
           {!isGoal ? "Send Goal" : "Exit Goal"}
         </Button>
-        <Button
-          variant="contained"
-          color={!isGoal ? "primary" : "secondary"}
-          onClick={moveBaseStopAPI("STOP")}
-          style={{ margin: "1rem" }}
-          disabled={!isGoal}
-        >
-          Emergency STOp
-        </Button>
+
         <Button
           variant="contained"
           color="primary"
@@ -515,9 +507,19 @@ const MyImage = ({ socket, x, y }) => {
                 }
           }
         >
-          {isDeleteWall ? "Confirm" : "Remove Wall"}
+          {isDeleteWall ? "Confirm Remove" : "Remove Wall"}
         </Button>
-
+      </Grid>
+      <Grid>
+        <Button
+          variant="contained"
+          color={!isGoal ? "primary" : "secondary"}
+          onClick={moveBaseStopAPI("STOP")}
+          style={{ margin: "1rem" }}
+          disabled={!isGoal}
+        >
+          Emergency STOp
+        </Button>
         <Button
           variant="contained"
           color=""
